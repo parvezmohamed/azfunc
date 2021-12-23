@@ -56,6 +56,8 @@ steps:
 - task: AzureFunctionApp@1
   inputs:
     azureSubscription: $(serviceConnectionName)
-    appType: functionAppLinux
+    appType: 'functionAppLinux'
     appName: $(appName)
     package: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
+    runtimeStack: 'PYTHON|3.7'
+    
