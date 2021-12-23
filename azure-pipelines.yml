@@ -3,15 +3,6 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-parameters:
-  - name: DeployToDevEast
-    displayName: Deploy To Dev East?
-    type: boolean
-    default: false
-  - name: DeployToDevWest
-    displayName: Deploy To Dev West?
-    type: boolean
-
 trigger:
   branches:
     include:
