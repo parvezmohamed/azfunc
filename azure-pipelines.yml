@@ -46,6 +46,16 @@ stages:
         inputs:
           PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
           artifactName: 'drop'
+      - task: AzureResourceManagerTemplateDeployment@3
+        displayName: 'ARM Template deployment: Resource Group scope'
+        inputs:
+          azureResourceManagerConnection: $(serviceConnectionName)
+          subscriptionId: $(subscriptionId)
+          resourceGroupName: $(resourceGroupName)
+          location: $(resourceGroupLocation)
+          csmFile: 'deployment_template.json'
+          overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'
+
 - stage: DEV
   dependsOn: Build
   pool:
@@ -53,16 +63,6 @@ stages:
   jobs:
   - job: Devjob
     steps:
-    - task: AzureResourceManagerTemplateDeployment@3
-      displayName: 'ARM Template deployment: Resource Group scope'
-      inputs:
-        azureResourceManagerConnection: $(serviceConnectionName)
-        subscriptionId: $(subscriptionId)
-        resourceGroupName: $(resourceGroupName)
-        location: $(resourceGroupLocation)
-        csmFile: 'deployment_template.json'
-        overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'
-
     - task: AzureFunctionApp@1
       inputs:
         azureSubscription: $(serviceConnectionName)
