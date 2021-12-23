@@ -22,7 +22,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
-      vmImage: $(vmImageName)
+      vmImage: ubuntu-18.04
     steps:
     - task: UsePythonVersion@0
       displayName: "Setting python version to 3.7"
