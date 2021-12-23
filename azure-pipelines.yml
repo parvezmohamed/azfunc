@@ -38,6 +38,15 @@ stages:
         python -m pip install --upgrade pip
         pip install --target="./functions/.python_packages/lib/site-packages" -r ./functions/requirements.txt
         tree -a .
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: 'ARM Template deployment: Resource Group scope'
+      inputs:
+        azureResourceManagerConnection: $(serviceConnectionName)
+        subscriptionId: $(subscriptionId)
+        resourceGroupName: $(resourceGroupName)
+        location: $(resourceGroupLocation)
+        csmFile: 'deployment_template.json'
+        overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'    
     - task: ArchiveFiles@2
       displayName: "Archive files"
       inputs:
@@ -60,18 +69,7 @@ stages:
     strategy:
       runOnce:
         deploy:
-
           steps:
-          - task: AzureResourceManagerTemplateDeployment@3
-            displayName: 'ARM Template deployment: Resource Group scope'
-            inputs:
-              azureResourceManagerConnection: $(serviceConnectionName)
-              subscriptionId: $(subscriptionId)
-              resourceGroupName: $(resourceGroupName)
-              location: $(resourceGroupLocation)
-              csmFile: 'deployment_template.json'
-              overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'
-
           - task: AzureFunctionApp@1
             inputs:
               azureSubscription: $(serviceConnectionName)
