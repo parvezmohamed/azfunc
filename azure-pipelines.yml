@@ -22,8 +22,14 @@ steps:
     architecture: 'x64'
 
 - bash: |
-    pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
-  displayName: 'Install app requirements'
+    if [ -f extensions.csproj ]
+    then
+        dotnet build extensions.csproj --output ./bin
+    fi
+    tree -a .
+    python -m pip install --upgrade pip
+    pip install --target="./functions/.python_packages/lib/site-packages" -r ./functions/requirements.txt
+    tree -a .
 
 - task: ArchiveFiles@2
   displayName: "Archive files"
