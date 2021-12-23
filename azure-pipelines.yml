@@ -13,31 +13,43 @@ variables:
 
 pool:
   vmImage: ubuntu-18.04
-
 stages:
-- stage: Build  
-  displayName: Build stage
-
+- stage: Build
   jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: ubuntu-18.04
+    - job: Buildjob
+      steps:
+      - task: UsePythonVersion@0
+        displayName: "Setting python version to 3.7"
+        inputs:
+          versionSpec: '3.7'
+          architecture: 'x64'
+
+      - bash: |
+          if [ -f extensions.csproj ]
+          then
+              dotnet build extensions.csproj --output ./bin
+          fi
+          tree -a .
+          python -m pip install --upgrade pip
+          pip install --target="./functions/.python_packages/lib/site-packages" -r ./functions/requirements.txt
+          tree -a .
+      - task: ArchiveFiles@2
+        displayName: "Archive files"
+        inputs:
+          rootFolderOrFile: "$(System.DefaultWorkingDirectory)"
+          includeRootFolder: false
+          archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
+          artifactName: 'drop'
+- stage: DEV
+  dependsOn: Build
+  condition: and(succeeded(),not(eq(variables['Build.Reason'], 'PullRequest')))
+  jobs:
+  - job: Devjob
     steps:
-    - task: UsePythonVersion@0
-      displayName: "Setting python version to 3.7"
-      inputs:
-        versionSpec: '3.7'
-        architecture: 'x64'
-    - bash: |
-        if [ -f extensions.csproj ]
-        then
-        dotnet build extensions.csproj --output ./bin
-        fi
-        tree -a .
-        python -m pip install --upgrade pip
-        pip install --target="./functions/.python_packages/lib/site-packages" -r ./functions/requirements.txt
-        tree -a .
     - task: AzureResourceManagerTemplateDeployment@3
       displayName: 'ARM Template deployment: Resource Group scope'
       inputs:
@@ -46,35 +58,12 @@ stages:
         resourceGroupName: $(resourceGroupName)
         location: $(resourceGroupLocation)
         csmFile: 'deployment_template.json'
-        overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'    
-    - task: ArchiveFiles@2
-      displayName: "Archive files"
+        overrideParameters: '-appName $(appName) -storageAcctName $(storageAcctName) -hostingPlanName $(hostingPlanName)'
+
+    - task: AzureFunctionApp@1
       inputs:
-        rootFolderOrFile: "$(System.DefaultWorkingDirectory)"
-        includeRootFolder: false
-        archiveFile: "$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip"
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
-        artifactName: 'drop'
-- stage: Dev
-  displayName: Dev   
-  dependsOn: Build
-            
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    environment: 'dev'
-    
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureFunctionApp@1
-            inputs:
-              azureSubscription: $(serviceConnectionName)
-              appType: 'functionAppLinux'
-              appName: $(appName)
-              package: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
-              runtimeStack: 'PYTHON|3.7'
-        
+        azureSubscription: $(serviceConnectionName)
+        appType: 'functionAppLinux'
+        appName: $(appName)
+        package: '$(System.DefaultWorkingDirectory)/build$(Build.BuildId).zip'
+        runtimeStack: 'PYTHON|3.7'
