@@ -56,9 +56,7 @@ stages:
   - deployment: Deploy
     displayName: Deploy
     environment: 'dev'
-    pool:
-      vmImage: $(vmImageName)
-
+    
     strategy:
       runOnce:
         deploy:
